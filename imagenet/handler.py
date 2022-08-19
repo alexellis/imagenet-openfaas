@@ -29,7 +29,8 @@ def handle(event, context):
     startDL = time.time()
     image_path = ""
     with tempfile.NamedTemporaryFile(delete=False) as f:
-        with requests.get(url, stream=True, timeout=10) as res:
+        headers = {"User-Agent": "imagenet-openfaas (+https://github.com/alexellis/imagenet-openfaas)"}
+        with requests.get(url, stream=True, timeout=10, headers=headers) as res:
             try:
                 shutil.copyfileobj(res.raw, f)
                 image_path = f.name

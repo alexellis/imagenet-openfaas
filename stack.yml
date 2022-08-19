@@ -1,0 +1,11 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  imagenet:
+    lang: python3-http-debian
+    handler: ./imagenet
+    image: alexellis2/imagenet:0.0.1
+    environment:
+      TF_CPP_MIN_LOG_LEVEL: 3

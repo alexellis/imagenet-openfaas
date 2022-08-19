@@ -6,11 +6,16 @@ functions:
   imagenet:
     lang: python3-http-debian
     handler: ./imagenet
-    image: alexellis2/imagenet:0.0.9
+    image: alexellis2/imagenet:0.0.10
     build_args:
       TEST_ENABLED: false
     environment:
       TF_CPP_MIN_LOG_LEVEL: 3
+    # OpenFaaS Pro annotations
+    annotations:
+      com.openfaas.health.http.path: "/health"
+      com.openfaas.health.http.initialDelay: "5s"
+      com.openfaas.health.http.periodSeconds: "2s"
 
 configuration:
   templates:

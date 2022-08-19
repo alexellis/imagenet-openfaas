@@ -6,7 +6,7 @@ functions:
   imagenet:
     lang: python3-http-debian
     handler: ./imagenet
-    image: alexellis2/imagenet:0.0.3
+    image: alexellis2/imagenet:0.0.8
     build_args:
       TEST_ENABLED: false
     environment:

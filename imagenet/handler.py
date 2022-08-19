@@ -5,7 +5,7 @@ from tensorflow.keras.applications.imagenet_utils import decode_predictions
 import numpy as np
 import tensorflow as tf   
 import requests
-import os, tempfile, io
+import os, tempfile, io, time
 import json
 import shutil
 
@@ -26,51 +26,66 @@ def handle(event, context):
     # The URL is in the request body
     url = event.body
 
+    startDL = time.time()
     image_path = ""
     with tempfile.NamedTemporaryFile(delete=False) as f:
-        with requests.get(url, stream=True) as res:
+        with requests.get(url, stream=True, timeout=10) as res:
             try:
                 shutil.copyfileobj(res.raw, f)
                 image_path = f.name
             finally:
                 f.close()
 
-    # Fetch the image from the URL
-    r = requests.get(url, timeout=10)
+            # Some images may not download correctly, or could result in a 404
+            if res.status_code == 200:
+                if res.headers['Content-Type'] != None and not res.headers['Content-Type'] in ('image/jpeg','image/png'):
+                    return {
+                        "statusCode": "400",
+                        "body": "bad image mime type {}".format(res.headers['Content-Type'] )
+                    }
 
-    # Some images may not download correctly, or could result in a 404
-    if r.status_code == 200:
-        image = None
-        try:
-            image = load_img(image_path, target_size=(224, 224))
-        except Exception as err:
-            print(err)
-            return {
-                "statusCode": "500",
-                "body": err
-            }
+                image = None
+                try:
+                    image = load_img(image_path, target_size=(224, 224))
+                except Exception as err:
+                    print(err)
+                    return {
+                        "statusCode": "500",
+                        "body": "can't load image: {}".format(err)
+                    }
 
-        input_arr = img_to_array(image)
-        batch = np.array([input_arr])  # Convert single image to a batch.
+                dlDuration = time.time() - startDL
 
-        processed_image = resnet50.preprocess_input(batch.copy())
-        predictions = model.predict(processed_image)
-        label_vgg = decode_predictions(predictions)
+                inferStart = time.time()
+                input_arr = img_to_array(image)
+                batch = np.array([input_arr])  # Convert single image to a batch.
 
-        res = []
-        for prediction_id in range(len(label_vgg[0])):
-            res.append({"name": str(label_vgg[0][prediction_id][1]), "score": str(label_vgg[0][prediction_id][2])})
+                processed_image = resnet50.preprocess_input(batch.copy())
+                predictions = model.predict(processed_image)
+                label_vgg = decode_predictions(predictions)
 
-        os.unlink(image_path)
-        return {
-            "statusCode": 200,
-            "body": json.dumps(res),
-            "headers": {
-               "Content-Type": "application/json"
-            }  
-        }
-    else:
-        return {
-            "statusCode": r.status_code,
-            "body": r.content
-        }
+                results = []
+                for prediction_id in range(len(label_vgg[0])):
+                    results.append({"name": str(label_vgg[0][prediction_id][1]), "score": str(label_vgg[0][prediction_id][2])})
+                
+                inferDuration = time.time() - inferStart
+
+                try:
+                    os.unlink(image_path)
+                except Exception as err:
+                    print("Unable to remove {} error {}".format(image_path, err))
+
+                return {
+                    "statusCode": 200,
+                    "body": json.dumps(results),
+                    "headers": {
+                    "Content-Type": "application/json",
+                    "X-Download-Time": "{:.2f}".format(dlDuration),
+                    "X-Inference-Time": "{:.2f}".format(inferDuration)
+                    }  
+                }
+            else:
+                return {
+                    "statusCode": res.status_code,
+                    "body": res.content
+                }

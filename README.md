@@ -1,6 +1,9 @@
 ## ImageNet for OpenFaaS
 
-This function requires a PC and does not work on a Raspberry Pi.
+Requires:
+
+* AMD64/Intel Operating System and CPU
+* Or 64-bit ARM Operating System like Ubuntu 22.04
 
 ```bash
 faas-cli deploy

@@ -1,5 +1,12 @@
 ## ImageNet for OpenFaaS
 
+This function packages the ImageNet library trained on the Inception V3 model which is bundled with TensorFlow 2.0.
+
+You can adapt the code to load other pre-trained models for serving and scaling over HTTP/REST.
+
+![Example](https://pbs.twimg.com/media/FaxxLMxX0AIBXP_?format=jpg&name=medium)
+> Example with image from WWF being classified
+
 Requires:
 
 * AMD64/Intel Operating System and CPU

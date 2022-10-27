@@ -23,7 +23,7 @@ tf.get_logger().setLevel('ERROR')
 model = resnet50.ResNet50(weights='imagenet')
 
 def handle(event, context):
-    if event.path == "/health" and model is not None:
+    if event.path == "/ready" and model is not None:
         return {
             "statusCode": "200",
             "body": "ready"
